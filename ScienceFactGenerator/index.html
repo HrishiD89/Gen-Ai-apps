@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Science Fact Generator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="loading">
+    <div class="loader"></div>
+
+    <main>
+      <p>Here's a science fact...</p>
+      <h1 id="response">
+        They contain potassium, including a tiny amount of the radioactive
+        isotope potassium-40 — completely harmless, but measurable with
+        sensitive equipment. 🍌
+      </h1>
+    </main>
+
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai"
+        }
+      }
+    </script>
+    <script  type="module" src="main.js"></script>
+  </body>
+</html>

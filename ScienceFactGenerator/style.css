@@ -1,0 +1,51 @@
+body {
+  background-color: rgb(18, 18, 18);
+  margin: 0;
+  color: white;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 60px;
+  box-sizing: border-box;
+  flex-direction: column;
+  font-family: monospace;
+
+  &.loading {
+    main {
+      display: none;
+    }
+
+    .loader {
+      display: block;
+    }
+  }
+}
+
+.loader {
+  display: none;
+  width: 50px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(farthest-side, greenyellow 94%, #0000) top/8px 8px no-repeat,
+    conic-gradient(#0000 30%, greenyellow);
+  -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 8px), #000 0);
+  animation: l13 1s infinite linear;
+}
+@keyframes l13 {
+  100% {
+    transform: rotate(1turn);
+  }
+}
+
+p {
+  color: greenyellow;
+  font-size: 22px;
+}
+
+h1 {
+  font-size: 40px;
+}
