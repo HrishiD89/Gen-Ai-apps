@@ -11,6 +11,13 @@ function App() {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [chatHistory, setChatHistory] = useState<
+    { role: string; parts: { text: string }[] }[]
+  >([]);
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  let fileContext: string = "";
+
   const fileToBase64 = async (selectedFile: File) => {
     const arrayBuffer = await selectedFile.arrayBuffer();
     let binary = "";
@@ -41,7 +48,10 @@ function App() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    setChatHistory([]);
+    setCurrentQuestion("");
+
     e.preventDefault();
 
     if (!file) {
@@ -56,7 +66,14 @@ function App() {
     }
 
     if (file.type === "application/pdf") {
-      prompt = "Summarize the content of this PDF clearly";
+      prompt = "Summarize the content of this PDF clearly.";
+    }
+
+    if (
+      file.type === "text/plain" ||
+      file.name.toLowerCase().endsWith(".txt")
+    ) {
+      prompt = "Summarize the content of this text file clearly.";
     }
 
     try {
@@ -65,8 +82,10 @@ function App() {
 
       const base64Data = await fileToBase64(file);
 
+      fileContext =  base64Data;
+
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.1-flash-lite-preview",
         contents: [
           { text: prompt },
           {
@@ -79,6 +98,28 @@ function App() {
       });
 
       setSummary(response.text ?? "No summary generated.");
+
+      const chat = ai.chats.create({
+        model: "gemini-3.1-flash-lite-preview",
+        history: chatHistory,
+
+        config: {
+          systemInstruction: `
+Greet the user and offer to answer any questions
+
+  `,
+        },
+      });
+
+      const response2 = await chat.sendMessage({
+        message: currentQuestion,
+      });
+
+      const modelEntry = {
+        role: "model",
+        parts: [{ text: response2.text ?? "" }],
+      };
+      setChatHistory((prev) => [...prev, modelEntry]);
     } catch (err) {
       console.error("Error uploading file:", err);
       setSummary("Error generating summary. Please try again.");
@@ -87,16 +128,61 @@ function App() {
     }
   };
 
-
   //Chat Feature
 
-  const [chatHistory, setChatHistory] = useState<{ question: string; answer: string }[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
+  const handleChatSubmit = async () => {
+    if (!currentQuestion.trim()) return;
 
+    const newUserEntry = {
+      role: "user",
+      parts: [{ text: currentQuestion }],
+    };
 
+    setChatHistory((prev) => [...prev, newUserEntry]);
 
+    try {
+      setChatLoading(true);
 
+      const chat = ai.chats.create({
+        model: "gemini-3.1-flash-lite-preview",
+        history: chatHistory,
+
+        config: {
+          systemInstruction: `
+You are a helpful document assistant. 
+Greet the user warmly and invite them to ask questions about their document. 
+Use the document context to answer in clear, simple language. 
+Keep replies short and conversational, like a human helper. 
+
+${summary}
+
+  `,
+        },
+      });
+
+      const response1 = await chat.sendMessage({
+        message: currentQuestion,
+      });
+
+      console.log("Chat response 1:", response1.text);
+
+      const modelEntry = {
+        role: "model",
+        parts: [{ text: response1.text ?? "" }],
+      };
+      setChatHistory((prev) => [...prev, modelEntry]);
+      setCurrentQuestion("");
+    } catch (err) {
+      console.error("Error during chat:", err);
+      const modelEntry = {
+        role: "model",
+        parts: [{ text: (err as undefined) ?? "" }],
+      };
+      setChatHistory((prev) => [...prev, modelEntry]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   return (
     <main className="app-shell">
@@ -104,7 +190,7 @@ function App() {
         <p className="eyebrow">Saturday Edition</p>
         <h1>Doc Summarizer</h1>
         <p className="subhead">
-          Upload a PDF or image and get a quick, readable summary.
+          Upload any document or image and get a quick, readable summary.
         </p>
 
         <form onSubmit={handleSubmit} className="upload-form">
@@ -116,7 +202,7 @@ function App() {
             id="file"
             name="file"
             onChange={handleChange}
-            accept=".pdf,image/*"
+            accept=".pdf,image/*,.txt"
           />
 
           {file && (
@@ -128,7 +214,7 @@ function App() {
           {file && previewURL && (
             <div className="preview-wrap" aria-label="File preview">
               <img
-                style={{ width:"5rem"}}
+                style={{ width: "5rem" }}
                 src={previewURL}
                 alt="Preview"
                 className="preview-image"
@@ -153,14 +239,37 @@ function App() {
         <section className="chat">
           <h2>Chat with your document</h2>
           <p>Ask questions about your document and get answers in real-time.</p>
-           
-           <div className="chats"></div>
-           
-           <div className="chat-box">
-            <input type="text" placeholder="Ask anything..." onChange={(e) => setCurrentQuestion(e.target.value)} />
-            <button type="button" onClick={handleChatSubmit}>
-              Send
-            </button>
+
+          <div className="chat-box">
+            <div className="chats">
+              {chatHistory.map((entry, indx) => {
+                return (
+                  <div key={indx} className={`chat-entry ${entry.role}`}>
+                    {entry.parts.map((part, partIndx) => (
+                      <p key={partIndx}>{part.text}</p>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+            {chatLoading && (
+              <p className="loader2" aria-label="Loading chat response"></p>
+            )}
+            <div className="chat-input">
+              <input
+                type="text"
+                placeholder="Ask anything..."
+                value={currentQuestion}
+                onChange={(e) => setCurrentQuestion(e.target.value)}
+              />
+              <button
+                type="button"
+                disabled={chatLoading}
+                onClick={handleChatSubmit}
+              >
+                {chatLoading ? "Sending..." : "Send"}
+              </button>
+            </div>
           </div>
         </section>
       </section>

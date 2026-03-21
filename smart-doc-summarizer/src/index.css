@@ -131,13 +131,70 @@ button:disabled {
 }
 
 
+/* HTML: <div class="loader"></div> */
+.loader2 {
+  width: 60px;
+  aspect-ratio: 4;
+  background: radial-gradient(circle closest-side,#000 90%,#0000) 0/calc(100%/3) 100% space;
+  clip-path: inset(0 100% 0 0);
+  animation: l2 1s steps(4) infinite;
+}
+@keyframes l2 {to{clip-path: inset(0 -34% 0 0)}}
+
 .chat-box {
   width: 100%;
+  border: 1px solid #cfc4b2;
+  background: #fbf7ef;
   padding: 12px;
+}
+
+.chats {
+  margin: 0;
+  padding: 10px;
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.user{
+  align-self: flex-end;
+  background: #1f1a17;
+  color: #fffdf8;
+  padding: 4px 6px;
+  border-radius: 12px 12px 0 12px;
+}
+
+.model{
+  align-self: flex-start;
+  background: #d8cfbf;
+  color: #1f1a17;
+  padding: 4px 6px;
+  border-radius: 12px 12px 12px 0;
+}
+
+.chat-input{
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.chat-input input{
+  flex: 1;
+  padding: 10px;
   border: 1px solid #cfc4b2;
   background: #fbf7ef;
 }
-
+.chat-input button{
+  margin-top: 0;
+  padding: 10px;
+  border: 1px solid #1f1a17;
+  background: #1f1a17;
+  color: #fffdf8;
+  cursor: pointer;
+}
 
 /* HTML: <div class="loader"></div> */
 .loader {
