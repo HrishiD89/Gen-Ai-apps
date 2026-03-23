@@ -16,7 +16,6 @@ function App() {
   >([]);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  let fileContext: string = "";
 
   const fileToBase64 = async (selectedFile: File) => {
     const arrayBuffer = await selectedFile.arrayBuffer();
@@ -82,8 +81,6 @@ function App() {
 
       const base64Data = await fileToBase64(file);
 
-      fileContext =  base64Data;
-
       const response = await ai.models.generateContent({
         model: "gemini-3.1-flash-lite-preview",
         contents: [
@@ -101,13 +98,12 @@ function App() {
 
       const chat = ai.chats.create({
         model: "gemini-3.1-flash-lite-preview",
-        history: chatHistory,
-
+        history: [],
         config: {
           systemInstruction: `
-Greet the user and offer to answer any questions
+    Greet the user and offer to answer any questions
 
-  `,
+      `,
         },
       });
 
@@ -130,7 +126,8 @@ Greet the user and offer to answer any questions
 
   //Chat Feature
 
-  const handleChatSubmit = async () => {
+  const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!currentQuestion.trim()) return;
 
     const newUserEntry = {
@@ -181,6 +178,13 @@ ${summary}
       setChatHistory((prev) => [...prev, modelEntry]);
     } finally {
       setChatLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleChatSubmit(e as unknown as React.InputEvent<HTMLFormElement>);
     }
   };
 
@@ -260,12 +264,17 @@ ${summary}
                 type="text"
                 placeholder="Ask anything..."
                 value={currentQuestion}
+                onKeyUp={handleKeyDown}
                 onChange={(e) => setCurrentQuestion(e.target.value)}
               />
               <button
                 type="button"
                 disabled={chatLoading}
-                onClick={handleChatSubmit}
+                onClick={(event) =>
+                  handleChatSubmit(
+                    event as unknown as React.SubmitEvent<HTMLFormElement>,
+                  )
+                }
               >
                 {chatLoading ? "Sending..." : "Send"}
               </button>
